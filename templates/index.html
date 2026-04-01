@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Numerology Report</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #f5a623;
+      --gold-dark: #D4A017;
+      --gold-light: #ffd27f;
+      --brown: #8B4513;
+      --brown-light: #a0522d;
+      --cream: #FFF8F0;
+      --cream-dark: #FFF0D8;
+      --text: #3a2a1a;
+      --text-light: #6b5344;
+      --white: #ffffff;
+      --shadow: 0 4px 20px rgba(139,69,19,0.12);
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #fff8f0 0%, #ffecd2 50%, #fff8f0 100%);
+      min-height: 100vh;
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: linear-gradient(135deg, var(--brown) 0%, #6b3410 50%, var(--brown) 100%);
+      color: var(--white);
+      text-align: center;
+      padding: 2.5rem 1rem 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .site-header h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .site-header .subtitle {
+      margin-top: 0.4rem;
+      font-size: 1rem;
+      color: var(--gold-light);
+      letter-spacing: 0.05em;
+    }
+    .gold-bar {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin-top: 1.2rem;
+    }
+
+    /* ── Container ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── Form Card ── */
+    .form-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 2rem 2.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(245,166,35,0.2);
+      margin-bottom: 2rem;
+    }
+    .form-card h2 {
+      font-size: 1.3rem;
+      color: var(--brown);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .field label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--brown);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .field input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid rgba(245,166,35,0.3);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--text);
+      background: var(--cream);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .field input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
+    }
+
+    .btn-generate {
+      width: 100%;
+      padding: 0.9rem 2rem;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 15px rgba(245,166,35,0.4);
+    }
+    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,166,35,0.5); }
+    .btn-generate:active { transform: translateY(0); }
+    .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Error ── */
+    .error-msg {
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      border-radius: 8px;
+      padding: 0.8rem 1.2rem;
+      color: #cc3333;
+      font-size: 0.95rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      color: var(--brown);
+      font-size: 1.1rem;
+    }
+    .spinner::after {
+      content: '';
+      display: inline-block;
+      width: 28px; height: 28px;
+      border: 3px solid rgba(245,166,35,0.3);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Report ── */
+    #report { display: none; }
+
+    /* Numbers Summary */
+    .numbers-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 600px) { .numbers-summary { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 360px) { .numbers-summary { grid-template-columns: repeat(2, 1fr); } }
+
+    .num-badge {
+      background: var(--white);
+      border: 2px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 1rem 0.5rem 0.8rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s;
+    }
+    .num-badge:hover { transform: translateY(-3px); }
+    .num-badge .num-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gold-dark);
+      line-height: 1;
+    }
+    .num-badge .num-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 0.3rem;
+    }
+
+    /* Download PDF buttons */
+    .btn-pdf {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.85rem 2rem;
+      background: linear-gradient(135deg, var(--brown) 0%, var(--brown-light) 100%);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+      margin: 1rem 0 2rem;
+      text-decoration: none;
+    }
+    .btn-pdf:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139,69,19,0.4); }
+    .btn-pdf:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Report Header */
+    .report-header {
+      text-align: center;
+      padding: 1.5rem 1rem 1rem;
+      background: linear-gradient(135deg, var(--brown) 0%, var(--brown-light) 100%);
+      border-radius: var(--radius);
+      color: var(--white);
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .report-header h2 { font-size: 1.6rem; }
+    .report-header .report-dob { color: var(--gold-light); margin-top: 0.3rem; font-size: 0.95rem; }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border-left: 4px solid var(--gold);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.2rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s;
+    }
+    .section-card:hover { transform: translateX(3px); }
+
+    .section-card h3 {
+      font-size: 1.1rem;
+      color: var(--brown);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem; height: 1.6rem;
+      background: var(--gold);
+      color: var(--white);
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .section-body { color: var(--text); font-size: 0.95rem; }
+    .section-body p { margin-bottom: 0.5rem; }
+    .section-body p:last-child { margin-bottom: 0; }
+
+    /* Key-Value rows inside cards */
+    .kv-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .kv-label {
+      font-weight: 700;
+      color: var(--brown);
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+    .kv-value { color: var(--text); font-size: 0.9rem; }
+
+    /* Tags / pills */
+    .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+    .tag {
+      background: var(--cream-dark);
+      color: var(--brown);
+      border: 1px solid rgba(245,166,35,0.35);
+      border-radius: 20px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Luck Bar */
+    .luck-bar-wrap { margin-top: 0.6rem; }
+    .luck-bar-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--brown);
+      margin-bottom: 0.3rem;
+    }
+    .luck-bar-bg {
+      background: var(--cream-dark);
+      border-radius: 20px;
+      height: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+    .luck-bar-fill {
+      height: 100%;
+      border-radius: 20px;
+      background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+      transition: width 1s ease;
+    }
+    .luck-bar-pct {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gold-dark);
+      margin-top: 0.2rem;
+    }
+
+    /* Lo Shu Grid */
+    .loshu-grid-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+    .loshu-table {
+      border-collapse: collapse;
+      width: min(280px, 100%);
+    }
+    .loshu-table td {
+      width: 33.33%;
+      aspect-ratio: 1;
+      text-align: center;
+      vertical-align: middle;
+      border: 2px solid var(--gold);
+      font-size: 1.5rem;
+      font-weight: 800;
+      transition: background 0.2s;
+      padding: 0.5rem;
+      min-width: 70px;
+      min-height: 70px;
+    }
+    .loshu-table td.present {
+      background: var(--gold);
+      color: var(--white);
+    }
+    .loshu-table td.absent {
+      background: #f0f0f0;
+      color: #bbb;
+      font-size: 1.1rem;
+    }
+    .loshu-count { font-size: 0.65rem; display: block; font-weight: 600; margin-top: -2px; }
+
+    /* Lo Shu interpretations */
+    .loshu-interps { margin-top: 1rem; }
+    .loshu-interp-item {
+      background: var(--cream);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.88rem;
+    }
+    .loshu-interp-item strong { color: var(--brown); }
+
+    /* Missing numbers */
+    .missing-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 1rem; }
+    .missing-chip {
+      background: #fff0f0;
+      color: #cc3333;
+      border: 1.5px solid #ffcccc;
+      border-radius: 20px;
+      padding: 0.2rem 0.75rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .complete-chip {
+      background: #f0fff4;
+      color: #22863a;
+      border: 1.5px solid #b2f5c5;
+      border-radius: 20px;
+      padding: 0.3rem 1rem;
+      font-weight: 600;
+      font-size: 0.88rem;
+      display: inline-block;
+      margin-top: 0.3rem;
+    }
+
+    /* Missing number remedies — collapsible */
+    .remedy-card {
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    .remedy-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      background: var(--cream-dark);
+      cursor: pointer;
+      user-select: none;
+      gap: 0.5rem;
+    }
+    .remedy-header:hover { background: #ffe4b0; }
+    .remedy-title { font-weight: 700; color: var(--brown); font-size: 0.95rem; }
+    .remedy-arrow {
+      font-size: 0.8rem;
+      color: var(--brown);
+      transition: transform 0.2s;
+    }
+    .remedy-body {
+      padding: 0.8rem 1rem;
+      display: none;
+      background: var(--white);
+    }
+    .remedy-body.open { display: block; }
+    .remedy-arrow.open { transform: rotate(180deg); }
+    .remedy-body .kv-row { margin-bottom: 0.5rem; }
+
+    /* Positive/Negative blocks */
+    .pos-neg-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    @media (max-width: 500px) { .pos-neg-grid { grid-template-columns: 1fr; } }
+    .pos-block, .neg-block {
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      font-size: 0.88rem;
+    }
+    .pos-block {
+      background: #f0fff4;
+      border-left: 3px solid #22863a;
+    }
+    .neg-block {
+      background: #fff8f0;
+      border-left: 3px solid var(--gold);
+    }
+    .pos-block strong { color: #22863a; display: block; margin-bottom: 0.3rem; }
+    .neg-block strong { color: var(--brown); display: block; margin-bottom: 0.3rem; }
+
+    /* Section divider */
+    .section-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>&#10024; Numerology Report</h1>
+  <p class="subtitle">Chaldean System — Arun Pandit Method</p>
+  <div class="gold-bar"></div>
+</header>
+
+<div class="container">
+
+  <!-- Input Form -->
+  <div class="form-card">
+    <h2>&#9733; Enter Your Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="e.g. Rohit Sharma" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label for="dob">Date of Birth</label>
+        <input type="date" id="dob" />
+      </div>
+    </div>
+    <button class="btn-generate" id="btn-generate" onclick="generateReport()">
+      Generate My Report
+    </button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="spinner" id="spinner">Calculating your numbers</div>
+
+  <!-- Report Section -->
+  <div id="report">
+
+    <!-- Report Header -->
+    <div class="report-header">
+      <h2 id="report-name"></h2>
+      <p class="report-dob" id="report-dob"></p>
+    </div>
+
+    <!-- PDF button (top) -->
+    <button class="btn-pdf" id="btn-pdf-top" onclick="downloadPDF()">
+      &#8595; Download PDF Report
+    </button>
+
+    <!-- Numbers Summary -->
+    <div class="numbers-summary" id="numbers-summary"></div>
+
+    <div class="section-divider"></div>
+
+    <!-- Sections Container -->
+    <div id="sections"></div>
+
+    <!-- PDF button (bottom) -->
+    <button class="btn-pdf" id="btn-pdf-bottom" onclick="downloadPDF()">
+      &#8595; Download PDF Report
+    </button>
+
+  </div><!-- /#report -->
+
+</div><!-- /.container -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let currentName = '';
+let currentDob = '';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+// ── Generate Report ───────────────────────────────────────────────────────────
+async function generateReport() {
+  hideError();
+  const name = document.getElementById('name').value.trim();
+  const dob = document.getElementById('dob').value.trim();
+
+  if (!name) { showError('Please enter your full name.'); return; }
+  if (!dob) { showError('Please select your date of birth.'); return; }
+
+  currentName = name;
+  currentDob = dob;
+
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  btn.textContent = 'Calculating...';
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('report').style.display = 'none';
+
+  try {
+    const res = await fetch('/generate-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, dob }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      showError(data.error || 'Failed to generate report. Please try again.');
+      return;
+    }
+    renderReport(data);
+  } catch (e) {
+    showError('Network error. Please check your connection and try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate My Report';
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+
+// ── Download PDF ──────────────────────────────────────────────────────────────
+async function downloadPDF() {
+  const btns = document.querySelectorAll('.btn-pdf');
+  btns.forEach(b => { b.disabled = true; b.textContent = 'Generating PDF...'; });
+
+  try {
+    const res = await fetch('/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: currentName, dob: currentDob }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert('PDF error: ' + (err.error || 'Unknown error'));
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `numerology_${currentName.replace(/\s+/g,'_')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Failed to download PDF. Please try again.');
+  } finally {
+    btns.forEach(b => { b.disabled = false; b.innerHTML = '&#8595; Download PDF Report'; });
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderReport(d) {
+  // Header
+  document.getElementById('report-name').textContent = d.name;
+  document.getElementById('report-dob').textContent = 'Date of Birth: ' + d.dob;
+
+  // Numbers summary
+  const nums = [
+    { label: 'Mulank', value: d.mulank },
+    { label: 'Bhagyank', value: d.bhagyank },
+    { label: 'Connection', value: d.connection },
+    { label: 'Personality', value: d.personality },
+    { label: 'Soul Urge', value: d.soul_urge },
+    { label: 'Success', value: d.success },
+    { label: 'Maturity', value: d.maturity },
+    { label: 'Personal Year', value: d.personal_year },
+  ];
+  document.getElementById('numbers-summary').innerHTML = nums.map(n =>
+    `<div class="num-badge">
+      <div class="num-value">${esc(String(n.value))}</div>
+      <div class="num-label">${esc(n.label)}</div>
+    </div>`
+  ).join('');
+
+  const sections = [];
+
+  // ── 1. Mulank ──
+  const md = d.mulank_data;
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">1</span> ${esc(md.title)}</h3>
+      <div class="section-body">
+        <p>${esc(md.text)}</p>
+        <div class="tag-list">
+          <span class="tag">Favourable: ${esc(md.favourable)}</span>
+          <span class="tag">Unfavourable: ${esc(md.unfavourable)}</span>
+          <span class="tag">Lucky Colour: ${esc(md.lucky_color)}</span>
+        </div>
+      </div>
+    </div>
+  `);
+
+  // ── 2. Bhagyank ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">2</span> Bhagyank ${esc(String(d.bhagyank))} — Destiny Number</h3>
+      <div class="section-body"><p>${esc(d.bhagyank_text)}</p></div>
+    </div>
+  `);
+
+  // ── 3. Love & Sex ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">3</span> Love &amp; Relationship Style</h3>
+      <div class="section-body"><p>${esc(d.love_sex_text)}</p></div>
+    </div>
+  `);
+
+  // ── 4. Connection ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">4</span> Connection Number: ${esc(String(d.connection))}</h3>
+      <div class="section-body"><p>${esc(d.connection_text)}</p></div>
+    </div>
+  `);
+
+  // ── 5. Personality ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">5</span> Personality Number: ${esc(String(d.personality))}</h3>
+      <div class="section-body"><p>${esc(d.personality_text)}</p></div>
+    </div>
+  `);
+
+  // ── 6. Soul Urge ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">6</span> Soul Urge Number: ${esc(String(d.soul_urge))}</h3>
+      <div class="section-body"><p>${esc(d.soul_urge_text)}</p></div>
+    </div>
+  `);
+
+  // ── 7. First Letter ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">7</span> First Letter of Name: ${esc(d.first_letter)}</h3>
+      <div class="section-body"><p>${esc(d.first_letter_text)}</p></div>
+    </div>
+  `);
+
+  // ── 8. Success Number ──
+  const sd = d.success_data;
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">8</span> Success Number: ${esc(String(d.success))}</h3>
+      <div class="section-body">
+        <div class="kv-row"><span class="kv-label">Qualities:</span><span class="kv-value">${esc(sd.qualities)}</span></div>
+        <div class="kv-row"><span class="kv-label">Challenges:</span><span class="kv-value">${esc(sd.challenges)}</span></div>
+      </div>
+    </div>
+  `);
+
+  // ── 9. Maturity ──
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">9</span> Maturity Number: ${esc(String(d.maturity))}</h3>
+      <div class="section-body"><p>${esc(d.maturity_text)}</p></div>
+    </div>
+  `);
+
+  // ── 10. Personal Year ──
+  const pyd = d.personal_year_data;
+  const luckPct = d.personal_year_luck;
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">10</span> Personal Year ${esc(String(d.personal_year))} (${esc(String(d.current_year))})</h3>
+      <div class="section-body">
+        <p><strong>${esc(pyd.title)}</strong></p>
+        <div class="pos-neg-grid">
+          <div class="pos-block"><strong>Positive Results</strong>${esc(pyd.positive)}</div>
+          <div class="neg-block"><strong>Watch Out For</strong>${esc(pyd.negative)}</div>
+        </div>
+        <div class="luck-bar-wrap" style="margin-top:1rem;">
+          <div class="luck-bar-label">Your Luck This Year (Mulank ${esc(String(d.mulank))} in Year ${esc(String(d.personal_year))})</div>
+          <div class="luck-bar-bg"><div class="luck-bar-fill" style="width:${luckPct}%"></div></div>
+          <div class="luck-bar-pct">${luckPct}%</div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  // ── 11. Career ──
+  const car = d.career;
+  const fields = car.fields.split(',').map(f => `<span class="tag">${esc(f.trim())}</span>`).join('');
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">11</span> Career — Mulank ${esc(String(d.mulank))} + Bhagyank ${esc(String(d.bhagyank))}</h3>
+      <div class="section-body">
+        <p>${esc(car.general)}</p>
+        <div class="kv-row" style="margin-top:0.6rem;"><span class="kv-label">Recommended Fields:</span></div>
+        <div class="tag-list">${fields}</div>
+        <div class="kv-row" style="margin-top:0.7rem;"><span class="kv-label">Key Strengths:</span><span class="kv-value">${esc(car.strengths)}</span></div>
+        <div class="kv-row"><span class="kv-label">Challenges to Overcome:</span><span class="kv-value">${esc(car.challenges)}</span></div>
+      </div>
+    </div>
+  `);
+
+  // ── 12. Lo Shu Grid ──
+  const grid = d.grid;
+  const loshuRows = [[4,9,2],[3,5,7],[8,1,6]];
+  let gridHtml = '<table class="loshu-table">';
+  for (const row of loshuRows) {
+    gridHtml += '<tr>';
+    for (const num of row) {
+      const count = parseInt(grid[String(num)] || 0);
+      if (count > 0) {
+        gridHtml += `<td class="present">${num}${count > 1 ? `<span class="loshu-count">x${count}</span>` : ''}</td>`;
+      } else {
+        gridHtml += `<td class="absent">(${num})</td>`;
+      }
+    }
+    gridHtml += '</tr>';
+  }
+  gridHtml += '</table>';
+
+  // Interpretations for present numbers
+  let interpsHtml = '';
+  const interps = d.loshu_interps || {};
+  const sortedNums = Object.keys(interps).map(Number).sort((a,b) => a-b);
+  if (sortedNums.length > 0) {
+    interpsHtml = '<div class="loshu-interps">';
+    for (const n of sortedNums) {
+      interpsHtml += `<div class="loshu-interp-item"><strong>Number ${n}:</strong> ${esc(interps[String(n)])}</div>`;
+    }
+    interpsHtml += '</div>';
+  }
+
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">12</span> Lo Shu Grid</h3>
+      <div class="section-body">
+        <div class="loshu-grid-wrap">${gridHtml}</div>
+        ${interpsHtml}
+      </div>
+    </div>
+  `);
+
+  // ── 13. Missing Numbers ──
+  const missing = d.missing || [];
+  const missingData = d.missing_data || {};
+  let missingContent = '';
+
+  if (missing.length === 0) {
+    missingContent = '<span class="complete-chip">&#10003; All numbers present — Complete Lo Shu Grid!</span>';
+  } else {
+    const chips = missing.map(n => `<span class="missing-chip">${n}</span>`).join('');
+    missingContent = `<div class="missing-chips">${chips}</div>`;
+
+    for (const num of missing) {
+      const mn = missingData[String(num)];
+      if (!mn) continue;
+      missingContent += `
+        <div class="remedy-card">
+          <div class="remedy-header" onclick="toggleRemedy(this)">
+            <span class="remedy-title">Missing Number ${num} — Impact &amp; Remedy</span>
+            <span class="remedy-arrow">&#9660;</span>
+          </div>
+          <div class="remedy-body">
+            <div class="kv-row"><span class="kv-label">Impact:</span><span class="kv-value">${esc(mn.impact)}</span></div>
+            <div class="kv-row"><span class="kv-label">Remedy Day:</span><span class="kv-value">${esc(mn.remedy_day)}</span></div>
+            <div class="kv-row"><span class="kv-label">Remedy:</span><span class="kv-value">${esc(mn.remedy)}</span></div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  sections.push(`
+    <div class="section-card">
+      <h3><span class="section-number">13</span> Missing Numbers — Impact &amp; Remedy</h3>
+      <div class="section-body">${missingContent}</div>
+    </div>
+  `);
+
+  // Render all sections
+  document.getElementById('sections').innerHTML = sections.join('');
+  document.getElementById('report').style.display = 'block';
+  document.getElementById('report').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Collapsible Remedy ────────────────────────────────────────────────────────
+function toggleRemedy(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.remedy-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+// ── Allow Enter key to submit ─────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const active = document.activeElement;
+    if (active && (active.id === 'name' || active.id === 'dob')) {
+      generateReport();
+    }
+  }
+});
+</script>
+
+</body>
+</html>
